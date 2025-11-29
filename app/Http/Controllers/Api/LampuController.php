@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\Lampu;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class LampuController extends Controller
@@ -15,6 +16,7 @@ class LampuController extends Controller
             'electric_pole_id' => ['required', 'exists:electric_poles,id'],
             'nomor'            => ['required', 'string', 'max:255'],
             'koordinat'        => ['nullable', 'string', 'max:255'],
+            'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ];
 
         if ($method === 'store') {
@@ -44,8 +46,15 @@ class LampuController extends Controller
         if ($validator->fails()) {
             return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
         }
+
+        $data = $request->except('foto');
+
+        if ($request->hasFile('foto')) {
+            $path = $request->file('foto')->store('lampus', 'public'); 
+            $data['foto_url'] = Storage::url($path); 
+        }
         
-        $lampu = Lampu::create($request->all());
+        $lampu = Lampu::create($data);
 
         return response()->json(['message' => 'Data lampu berhasil ditambahkan', 'data' => $lampu], 201);
     }
@@ -74,8 +83,21 @@ class LampuController extends Controller
         if ($validator->fails()) {
             return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
         }
+
+        $data = $request->except('foto');
+        $data['foto_url'] = $lampu->foto_url;
         
-        $lampu->update($request->all());
+        if ($request->hasFile('foto')) {
+            if ($lampu->foto_url) {
+                $oldPath = str_replace(Storage::url(''), '', $lampu->foto_url); 
+                Storage::disk('public')->delete($oldPath);
+            }
+            
+            $path = $request->file('foto')->store('lampus', 'public');
+            $data['foto_url'] = Storage::url($path);
+        }
+        
+        $lampu->update($data);
 
         return response()->json(['message' => 'Data lampu berhasil diperbarui', 'data' => $lampu]);
     }

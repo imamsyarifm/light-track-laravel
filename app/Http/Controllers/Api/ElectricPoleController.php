@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\ElectricPole;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class ElectricPoleController extends Controller
@@ -19,6 +20,7 @@ class ElectricPoleController extends Controller
             'kelurahan_desa' => ['required', 'string', 'max:255'],
             'alamat'         => ['required', 'string'],
             'koordinat'      => ['nullable', 'string', 'max:255'],
+            'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ];
 
         if ($method === 'store') {
@@ -57,8 +59,15 @@ class ElectricPoleController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
+
+        $data = $request->except('foto');
+
+        if ($request->hasFile('foto')) {
+            $path = $request->file('foto')->store('electric_poles', 'public'); 
+            $data['foto_url'] = Storage::url($path); 
+        }
         
-        $pole = ElectricPole::create($request->all());
+        $pole = ElectricPole::create($data);
 
         return response()->json([
             'message' => 'Data tiang listrik berhasil ditambahkan',
@@ -107,7 +116,20 @@ class ElectricPoleController extends Controller
             ], 422);
         }
         
-        $pole->update($request->all());
+        $data = $request->except('foto');
+        $data['foto_url'] = $pole->foto_url;
+        
+        if ($request->hasFile('foto')) {
+            if ($pole->foto_url) {
+                $oldPath = str_replace(Storage::url(''), '', $pole->foto_url); 
+                Storage::disk('public')->delete($oldPath);
+            }
+            
+            $path = $request->file('foto')->store('electric_poles', 'public');
+            $data['foto_url'] = Storage::url($path);
+        }
+        
+        $pole->update($data);
 
         return response()->json([
             'message' => 'Data tiang listrik berhasil diperbarui',

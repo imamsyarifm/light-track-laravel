@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\Cctv;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class CctvController extends Controller
@@ -15,6 +16,7 @@ class CctvController extends Controller
             'electric_pole_id' => ['required', 'exists:electric_poles,id'],
             'nomor'            => ['required', 'string', 'max:255'],
             'koordinat'        => ['nullable', 'string', 'max:255'],
+            'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ];
 
         if ($method === 'store') {
@@ -44,8 +46,15 @@ class CctvController extends Controller
         if ($validator->fails()) {
             return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
         }
+
+        $data = $request->except('foto');
+
+        if ($request->hasFile('foto')) {
+            $path = $request->file('foto')->store('cctvs', 'public'); 
+            $data['foto_url'] = Storage::url($path); 
+        }
         
-        $cctv = Cctv::create($request->all());
+        $cctv = Cctv::create($data);
 
         return response()->json(['message' => 'Data CCTV berhasil ditambahkan', 'data' => $cctv], 201);
     }
@@ -74,8 +83,21 @@ class CctvController extends Controller
         if ($validator->fails()) {
             return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
         }
+
+        $data = $request->except('foto');
+        $data['foto_url'] = $cctv->foto_url;
         
-        $cctv->update($request->all());
+        if ($request->hasFile('foto')) {
+            if ($cctv->foto_url) {
+                $oldPath = str_replace(Storage::url(''), '', $cctv->foto_url); 
+                Storage::disk('public')->delete($oldPath);
+            }
+            
+            $path = $request->file('foto')->store('cctvs', 'public');
+            $data['foto_url'] = Storage::url($path);
+        }
+        
+        $cctv->update($data);
 
         return response()->json(['message' => 'Data CCTV berhasil diperbarui', 'data' => $cctv]);
     }

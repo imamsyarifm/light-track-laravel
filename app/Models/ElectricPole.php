@@ -22,5 +22,6 @@ class ElectricPole extends Model
         'kelurahan_desa',
         'alamat',
         'koordinat',
+        'foto_url',
     ];
 }

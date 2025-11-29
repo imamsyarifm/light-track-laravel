@@ -14,6 +14,7 @@ class Lampu extends Model
         'nomor',
         'electric_pole_id',
         'koordinat',
+        'foto_url',
     ];
 
     public function electricPole(): BelongsTo
