@@ -4,12 +4,20 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\ElectricPole;
 use App\Http\Controllers\Controller;
+use App\Services\WilayahService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class ElectricPoleController extends Controller
 {
+    protected $wilayahService;
+
+    public function __construct(WilayahService $wilayahService)
+    {
+        $this->wilayahService = $wilayahService;
+    }
+
     private function validationRules(string $method, ElectricPole $pole = null)
     {
         $rules = [
@@ -20,7 +28,7 @@ class ElectricPoleController extends Controller
             'kelurahan_desa' => ['required', 'string', 'max:255'],
             'alamat'         => ['required', 'string'],
             'koordinat'      => ['nullable', 'string', 'max:255'],
-            'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'foto'           => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ];
 
         if ($method === 'store') {
@@ -32,6 +40,25 @@ class ElectricPoleController extends Controller
         }
 
         return $rules;
+    }
+
+    protected function generateKode(array $data): array
+    {
+        $kodeWilayah = $this->wilayahService->getKodeWilayah(
+            $data['provinsi'],
+            $data['kota_kabupaten']
+        );
+
+        if (!$kodeWilayah) {
+            throw new \Exception("Kode wilayah tidak ditemukan untuk Provinsi/Kota yang diinput.");
+        }
+
+        $data['kode_provinsi'] = $kodeWilayah['kode_provinsi'];
+        $data['kode_kota_kabupaten'] = $kodeWilayah['kode_kota_kabupaten'];
+        $nomorFormatted = str_pad(substr($data['nomor'], -6), 6, '0', STR_PAD_LEFT);
+        $data['kode'] = $kodeWilayah['kode_provinsi'] . $kodeWilayah['kode_kota_kabupaten'] . $nomorFormatted;
+
+        return $data;
     }
 
     /**
@@ -61,6 +88,11 @@ class ElectricPoleController extends Controller
         }
 
         $data = $request->except('foto');
+        try {
+            $data = $this->generateKode($data);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         if ($request->hasFile('foto')) {
             $path = $request->file('foto')->store('electric_poles', 'public'); 
@@ -117,7 +149,11 @@ class ElectricPoleController extends Controller
         }
         
         $data = $request->except('foto');
-        $data['foto_url'] = $pole->foto_url;
+        try {
+            $data = $this->generateKode($data);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
         
         if ($request->hasFile('foto')) {
             if ($pole->foto_url) {
@@ -127,6 +163,8 @@ class ElectricPoleController extends Controller
             
             $path = $request->file('foto')->store('electric_poles', 'public');
             $data['foto_url'] = Storage::url($path);
+        } else {
+            $data['foto_url'] = $pole->foto_url;
         }
         
         $pole->update($data);

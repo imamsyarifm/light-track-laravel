@@ -12,6 +12,7 @@ class Cctv extends Model
     
     protected $fillable = [
         'nomor',
+        'kode',
         'electric_pole_id',
         'koordinat',
         'foto_url',

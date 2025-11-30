@@ -16,8 +16,11 @@ class ElectricPole extends Model
      */
     protected $fillable = [
         'nomor',
+        'kode',
         'provinsi',
+        'kode_provinsi',
         'kota_kabupaten',
+        'kode_kota_kabupaten',
         'kecamatan',
         'kelurahan_desa',
         'alamat',

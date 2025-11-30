@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Iot;
+use App\Models\ElectricPole;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -16,7 +17,7 @@ class IotController extends Controller
             'electric_pole_id' => ['required', 'exists:electric_poles,id'],
             'nomor'            => ['required', 'string', 'max:255'],
             'koordinat'        => ['nullable', 'string', 'max:255'],
-            'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'foto'             => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ];
 
         if ($method === 'store') {
@@ -47,7 +48,10 @@ class IotController extends Controller
             return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
         }
 
+        $pole = ElectricPole::findOrFail($request->electric_pole_id);
+
         $data = $request->except('foto');
+        $data['kode'] = $pole->kode . '-' . $data['nomor'];
 
         if ($request->hasFile('foto')) {
             $path = $request->file('foto')->store('iots', 'public'); 
@@ -84,8 +88,11 @@ class IotController extends Controller
             return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
         }
 
+        $poleId = $request->has('electric_pole_id') ? $request->electric_pole_id : $iot->electric_pole_id;
+        $pole = ElectricPole::findOrFail($poleId);
+
         $data = $request->except('foto');
-        $data['foto_url'] = $iot->foto_url;
+        $data['kode'] = $pole->kode . '-' . $data['nomor'];
         
         if ($request->hasFile('foto')) {
             if ($iot->foto_url) {
@@ -95,6 +102,8 @@ class IotController extends Controller
             
             $path = $request->file('foto')->store('iots', 'public');
             $data['foto_url'] = Storage::url($path);
+        } else {
+            $data['foto_url'] = $cctv->foto_url;
         }
         
         $iot->update($data);

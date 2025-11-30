@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Lampu;
+use App\Models\ElectricPole;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -16,7 +17,7 @@ class LampuController extends Controller
             'electric_pole_id' => ['required', 'exists:electric_poles,id'],
             'nomor'            => ['required', 'string', 'max:255'],
             'koordinat'        => ['nullable', 'string', 'max:255'],
-            'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'foto'             => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ];
 
         if ($method === 'store') {
@@ -47,7 +48,10 @@ class LampuController extends Controller
             return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
         }
 
+        $pole = ElectricPole::findOrFail($request->electric_pole_id);
+        
         $data = $request->except('foto');
+        $data['kode'] = $pole->kode . '-' . $data['nomor'];
 
         if ($request->hasFile('foto')) {
             $path = $request->file('foto')->store('lampus', 'public'); 
@@ -84,8 +88,11 @@ class LampuController extends Controller
             return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
         }
 
+        $poleId = $request->has('electric_pole_id') ? $request->electric_pole_id : $lampu->electric_pole_id;
+        $pole = ElectricPole::findOrFail($poleId);
+
         $data = $request->except('foto');
-        $data['foto_url'] = $lampu->foto_url;
+        $data['kode'] = $pole->kode . '-' . $data['nomor'];
         
         if ($request->hasFile('foto')) {
             if ($lampu->foto_url) {
@@ -95,6 +102,8 @@ class LampuController extends Controller
             
             $path = $request->file('foto')->store('lampus', 'public');
             $data['foto_url'] = Storage::url($path);
+        } else {
+            $data['foto_url'] = $lampu->foto_url;
         }
         
         $lampu->update($data);
