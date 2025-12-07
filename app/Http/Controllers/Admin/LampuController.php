@@ -13,13 +13,24 @@ class LampuController extends Controller
     public function create()
     {
         $poles = ElectricPole::select('id', 'nomor', 'kode')->get();
-        return "Lampu Create Form. Tiang Listrik tersedia: {$poles->count()}";
+        return view('admin.lampus.create', compact('poles'));
     }
 
     public function index()
     {
-        $lampu = Lampu::latest()->get();
-        return "Lampu Index (Total: {$lampu->count()})";
+        $search = request('search');
+        
+        $lampus = Lampu::with('electricPole')
+            ->latest()
+            ->when($search, function ($query, $search) {
+                return $query->where('nomor', 'like', "%{$search}%")
+                             ->orWhereHas('electricPole', function ($q) use ($search) {
+                                 $q->where('kode', 'like', "%{$search}%");
+                             });
+            })
+            ->paginate(15);
+            
+        return view('admin.lampus.index', compact('lampus'));
     }
 
     public function store(Request $request)
@@ -39,15 +50,18 @@ class LampuController extends Controller
         if ($request->hasFile('foto')) {
             $path = $request->file('foto')->store('lampus', 'public'); 
             $data['foto_url'] = Storage::url($path); 
+        } else {
+            $data['foto_url'] = null;
         }
 
         Lampu::create($data);
-        return "SUCCESS: Lampu '{$data['kode']}' berhasil ditambahkan. Redirecting...";
+        return redirect()->route('admin.lampus.index')->with('success', "Lampu '{$data['kode']}' berhasil ditambahkan.");
     }
 
     public function edit(Lampu $lampu)
     {
-        return "Lampu Edit Form for ID: {$lampu->id}";
+        $poles = ElectricPole::select('id', 'nomor', 'kode')->get();
+        return view('admin.lampus.edit', compact('lampu', 'poles'));
     }
     
     public function update(Request $request, Lampu $lampu)
@@ -55,6 +69,7 @@ class LampuController extends Controller
         $request->validate([
             'electric_pole_id'  => 'required|exists:electric_poles,id',
             'nomor'             => 'required|string|unique:lampus,nomor,' . $lampu->id, 
+            // 'koordinat'         => 'nullable|string',
             'foto'              => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
@@ -77,7 +92,7 @@ class LampuController extends Controller
         }
 
         $lampu->update($data);
-        return "SUCCESS: Lampu ID {$lampu->id} diperbarui. Redirecting...";
+        return redirect()->route('admin.lampus.index')->with('success', "Lampu '{$lampu->kode}' berhasil diperbarui.");
     }
 
     public function destroy(Lampu $lampu)
@@ -88,6 +103,6 @@ class LampuController extends Controller
         }
         $lampu->delete();
         
-        return "SUCCESS: Lampu ID {$lampu->id} dihapus. Redirecting...";
+        return redirect()->route('admin.lampus.index')->with('success', "Lampu '{$lampu->kode}' berhasil dihapus.");
     }
 }

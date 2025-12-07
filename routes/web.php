@@ -31,3 +31,4 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
     ->name('logout');
 
 require __DIR__.'/auth.php';
+require __DIR__.'/admin.php';
