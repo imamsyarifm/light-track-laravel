@@ -38,13 +38,22 @@ class ElectricPoleController extends Controller
 
     public function index()
     {
-        $poles = ElectricPole::latest()->get();
-        return "Electric Poles Index (Total: {$poles->count()})";
+        $search = request('search');
+        
+        $poles = ElectricPole::latest()
+            ->when($search, function ($query, $search) {
+                return $query->where('nomor', 'like', "%{$search}%")
+                             ->orWhere('provinsi', 'like', "%{$search}%")
+                             ->orWhere('kota_kabupaten', 'like', "%{$search}%");
+            })
+            ->paginate(15);
+
+        return view('admin.poles.index', compact('poles'));
     }
 
     public function create()
     {
-        return "Electric Poles Create Form (Backend Only)";
+        return view('admin.poles.create');
     }
 
     public function store(Request $request)
@@ -53,6 +62,10 @@ class ElectricPoleController extends Controller
             'nomor' => 'required|string|unique:electric_poles,nomor',
             'provinsi' => 'required|string',
             'kota_kabupaten' => 'required|string',
+            // 'kecamatan' => 'required|string',
+            // 'kelurahan_desa' => 'required|string',
+            // 'alamat' => 'required|string',
+            // 'koordinat' => 'nullable|string',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
         
@@ -65,22 +78,30 @@ class ElectricPoleController extends Controller
         if ($request->hasFile('foto')) {
             $path = $request->file('foto')->store('electric_poles', 'public'); 
             $data['foto_url'] = Storage::url($path); 
+        }else {
+            $data['foto_url'] = null;
         }
 
         ElectricPole::create($data);
 
-        return "SUCCESS: Tiang Listrik '{$data['kode']}' berhasil ditambahkan. Redirecting...";
+        return redirect()->route('admin.poles.index')->with('success', "Tiang Listrik '{$data['kode']}' berhasil ditambahkan.");
     }
 
     public function edit(ElectricPole $pole)
     {
-        return "Electric Poles Edit Form for ID: {$pole->id}";
+        return view('admin.poles.edit', compact('pole'));
     }
     
     public function update(Request $request, ElectricPole $pole)
     {
         $request->validate([
             'nomor' => 'required|string|unique:electric_poles,nomor,'.$pole->id,
+            // 'provinsi' => 'required|string',
+            // 'kota_kabupaten' => 'required|string',
+            // 'kecamatan' => 'required|string',
+            // 'kelurahan_desa' => 'required|string',
+            // 'alamat' => 'required|string',
+            // 'koordinat' => 'nullable|string',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
@@ -103,7 +124,7 @@ class ElectricPoleController extends Controller
 
         $pole->update($data);
 
-        return "SUCCESS: Tiang Listrik ID {$pole->id} diperbarui. Redirecting...";
+        return redirect()->route('admin.poles.index')->with('success', "Tiang Listrik '{$pole->kode}' berhasil diperbarui.");
     }
     
     public function destroy(ElectricPole $pole)
@@ -114,6 +135,6 @@ class ElectricPoleController extends Controller
         }
         $pole->delete();
         
-        return "SUCCESS: Tiang Listrik ID {$pole->id} dihapus. Redirecting...";
+        return redirect()->route('admin.poles.index')->with('success', "Tiang Listrik '{$pole->kode}' berhasil dihapus.");
     }
 }
