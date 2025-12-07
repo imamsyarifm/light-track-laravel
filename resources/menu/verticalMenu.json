@@ -23,7 +23,7 @@
         {
           "url": "/",
           "name": "Analytics",
-          "slug": "dashboard-analytics"
+          "slug": "dashboard"
         },
         {
           "url": "https://demos.themeselection.com/materio-bootstrap-html-laravel-admin-template/demo-1/app/ecommerce/dashboard",

@@ -8,14 +8,13 @@ function menuData()
                 (object)[
                     'name' => 'Dashboard',
                     'icon' => 'mdi-home-outline',
-                    'url'  => route('dashboard-analytics'),
-                    'slug' => 'dashboard-analytics',
+                    'url'  => route('dashboard'),
+                    'slug' => 'dashboard',
                 ],
                 (object)[
                     'name' => 'Users',
-                    'icon' => 'mdi-account-outline',
-                    'url'  => route('users.index'),
-                    'slug' => 'users',
+                    'url'  => '/users',
+                    'slug' => 'users.index',
                 ]
             ]
         ]

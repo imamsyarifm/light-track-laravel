@@ -1,5 +1,5 @@
 @extends('layouts/contentNavbarLayout')
-@section('title', 'Dashboard - Analytics')
+@section('title', 'Dashboard')
 
 @section('vendor-style')
 @vite(['resources/assets/vendor/libs/apex-charts/apex-charts.scss'])
@@ -322,7 +322,7 @@
     <!--/ four cards -->
 
     <!-- Sales by Countries -->
-    <div class="col-xl-4 col-md-6">
+    {{-- <div class="col-xl-4 col-md-6">
         <div class="card h-100">
             <div class="card-header d-flex align-items-center justify-content-between">
                 <h5 class="card-title m-0 me-2">Sales by Countries</h5>
@@ -435,11 +435,11 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
     <!--/ Sales by Countries -->
 
     <!-- Deposit / Withdraw -->
-    <div class="col-xl-8">
+    {{-- <div class="col-xl-8">
         <div class="card-group">
             <div class="card mb-0">
                 <div class="card-body card-separator">
@@ -586,11 +586,11 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
     <!-- Deposit / Withdraw -->
 
     <!-- Data Tables -->
-    <div class="col-12">
+    {{-- <div class="col-12">
         <div class="card overflow-hidden">
             <div class="table-responsive">
                 <table class="table table-sm">
@@ -775,7 +775,7 @@
                 </table>
             </div>
         </div>
-    </div>
+    </div> --}}
     <!--/ Data Tables -->
 </div>
 @endsection
