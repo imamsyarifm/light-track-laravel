@@ -3,10 +3,9 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Admin\LampuController;
+use App\Http\Controllers\Admin\ElectricPoleController;
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
 
 Route::middleware('guest')->get('/', function () {
     return redirect()->route('login');
@@ -32,3 +31,7 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
 
 require __DIR__.'/auth.php';
 require __DIR__.'/admin.php';
+
+Route::resource('lampu', LampuController::class);
+Route::resource('tiang-lampu', ElectricPoleController::class);
+

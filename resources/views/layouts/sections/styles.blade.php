@@ -6,6 +6,7 @@
 
 <!-- Fonts Icons -->
 @vite(['resources/assets/vendor/fonts/iconify/iconify.css'])
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css">
 
 <!-- BEGIN: Vendor CSS-->
 @vite(['resources/assets/vendor/libs/node-waves/node-waves.scss'])

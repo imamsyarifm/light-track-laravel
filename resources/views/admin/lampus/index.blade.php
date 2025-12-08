@@ -1,4 +1,5 @@
-{{-- @extends('layouts.admin') --}}
+@extends('layouts/contentNavbarLayout')
+@section('title', 'Lampu')
 
 @section('content')
 
@@ -105,3 +106,5 @@
 </div>
 
 @endsection
+
+

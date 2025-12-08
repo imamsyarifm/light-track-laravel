@@ -1,4 +1,5 @@
-{{-- @extends('layouts.admin') --}}
+@extends('layouts/contentNavbarLayout')
+@section('title', 'Create Lampu')
 
 @section('content')
 

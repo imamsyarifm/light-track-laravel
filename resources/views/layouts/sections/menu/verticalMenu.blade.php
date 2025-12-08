@@ -31,33 +31,34 @@ use Illuminate\Support\Facades\Route;
 
         {{-- active menu method --}}
         @php
-        $activeClass = null;
-        $currentRouteName = Route::currentRouteName();
+            $activeClass = null;
+            $currentPath = request()->path();
+            
+            if (isset($menu->active_on) && is_array($menu->active_on)) {
+                foreach ($menu->active_on as $path) {
+                    if (str_starts_with($currentPath, trim($path, '/'))) {
+                        $activeClass = 'active';
+                        break;
+                    }
+                }
+            } else {
+                
+                if (str_starts_with($currentPath, trim($menu->slug, '/'))) {
+                    $activeClass = 'active';
+                }
+            }
 
-        if ($currentRouteName === $menu->slug) {
-        $activeClass = 'active';
-        }
-        elseif (isset($menu->submenu)) {
-        if (gettype($menu->slug) === 'array') {
-        foreach($menu->slug as $slug){
-        if (str_contains($currentRouteName,$slug) and strpos($currentRouteName,$slug) === 0) {
-        $activeClass = 'active open';
-        }
-        }
-        }
-        else{
-        if (str_contains($currentRouteName,$menu->slug) and strpos($currentRouteName,$menu->slug) === 0) {
-        $activeClass = 'active open';
-        }
-        }
-        }
+            if (isset($menu->submenu) && $activeClass) {
+                $activeClass .= ' open';
+            }
         @endphp
+
 
         {{-- main menu --}}
         <li class="menu-item {{$activeClass}}">
             <a href="{{ isset($menu->url) ? url($menu->url) : 'javascript:void(0);' }}" class="{{ isset($menu->submenu) ? 'menu-link menu-toggle' : 'menu-link' }}" @if (isset($menu->target) and !empty($menu->target)) target="_blank" @endif>
                 @isset($menu->icon)
-                <i class="{{ $menu->icon }}"></i>
+                <i class="mx-2 tf-icons mdi {{ $menu->icon }}"></i>
                 @endisset
                 <div>{{ isset($menu->name) ? __($menu->name) : '' }}</div>
                 @isset($menu->badge)
