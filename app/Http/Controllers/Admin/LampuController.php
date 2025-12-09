@@ -28,7 +28,8 @@ class LampuController extends Controller
                                  $q->where('kode', 'like', "%{$search}%");
                              });
             })
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
             
         return view('admin.lampus.index', compact('lampus'));
     }
@@ -55,7 +56,7 @@ class LampuController extends Controller
         }
 
         Lampu::create($data);
-        return redirect()->route('admin.lampus.index')->with('success', "Lampu '{$data['kode']}' berhasil ditambahkan.");
+        return redirect('/lampu')->with('success', "Lampu '{$data['kode']}' berhasil ditambahkan.");
     }
 
     public function edit(Lampu $lampu)

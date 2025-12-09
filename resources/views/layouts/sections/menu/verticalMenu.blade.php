@@ -4,15 +4,15 @@ use Illuminate\Support\Facades\Route;
 <aside id="layout-menu" class="layout-menu menu-vertical menu">
 
     <!-- ! Hide app brand if navbar-full -->
-    <div class="app-brand demo">
-        <a href="{{url('/')}}" class="app-brand-link">
-            <span class="app-brand-logo demo me-1">@include('_partials.macros')</span>
-            <span class="app-brand-text demo menu-text fw-semibold ms-2">{{config('variables.templateName')}}</span>
+    <div class="d-flex justify-content-start align-items-left py-1 px-5 shadow-sm p-3 mb-5 bg-body rounded">
+        <a href="{{ url('/') }}">
+            <img src="{{ asset('assets/img/logo/logo-light.png') }}" style="width: 3rem;" /> 
         </a>
+        <h2 class="fw-bold fs-4">Smart PJU</h2>
 
-        <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
+        {{-- <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
             <i class="menu-toggle-icon d-xl-inline-block align-middle"></i>
-        </a>
+        </a> --}}
     </div>
 
     <div class="menu-inner-shadow"></div>

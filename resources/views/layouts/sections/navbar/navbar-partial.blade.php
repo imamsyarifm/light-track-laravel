@@ -24,18 +24,18 @@ use Illuminate\Support\Facades\Route;
 
 <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
     <!-- Search -->
-    <div class="navbar-nav align-items-center">
+    {{-- <div class="navbar-nav align-items-center">
         <div class="nav-item d-flex align-items-center">
             <i class="icon-base ri ri-search-line icon-lg lh-0"></i>
             <input type="text" class="form-control border-0 shadow-none" placeholder="Search..." aria-label="Search...">
         </div>
-    </div>
+    </div> --}}
     <!-- /Search -->
     <ul class="navbar-nav flex-row align-items-center ms-auto">
         <!-- Place this tag where you want the button to render. -->
-        <li class="nav-item lh-1 me-4">
+        {{-- <li class="nav-item lh-1 me-4">
             <a class="github-button" href="{{config('variables.repository')}}" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star themeselection/sneat-html-laravel-admin-template-free on GitHub">Star</a>
-        </li>
+        </li> --}}
 
         <!-- User -->
         <li class="nav-item navbar-dropdown dropdown-user dropdown">

@@ -1,6 +1,6 @@
 @extends('layouts/blankLayout')
 
-@section('title', 'Register Basic - Pages')
+@section('title', 'Register')
 
 @section('page-style')
 @vite(['resources/assets/vendor/scss/pages/page-auth.scss'])

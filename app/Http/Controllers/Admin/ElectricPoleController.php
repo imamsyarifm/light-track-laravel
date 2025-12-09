@@ -84,7 +84,7 @@ class ElectricPoleController extends Controller
 
         ElectricPole::create($data);
 
-        return redirect()->route('admin.poles.index')->with('success', "Tiang Listrik '{$data['kode']}' berhasil ditambahkan.");
+        return redirect('/tiang-lampu')->with('success', "Tiang Listrik '{$data['kode']}' berhasil ditambahkan.");
     }
 
     public function edit(ElectricPole $pole)

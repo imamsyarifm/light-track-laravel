@@ -8,8 +8,8 @@
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">📋 Daftar Tiang Listrik</h1>
         
-        <a href="{{ route('admin.poles.create') }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
-            <i class="fas fa-plus fa-sm text-white-50"></i> Tambah Tiang Baru
+        <a href="{{ route('admin.poles.create') }}" class="btn btn-sm btn-primary shadow-sm">
+            <i class="mdi mdi-plus-thick mdi-24px"></i> Tambah Tiang Baru
         </a>
     </div>
     
@@ -24,9 +24,9 @@
 
     <div class="card shadow mb-4">
         <div class="card-body">
-            <form action="{{ route('admin.poles.index') }}" method="GET" class="form-inline">
+            <form action="/tiang-lampu" method="GET" class="form-inline d-flex">
                 <input type="text" name="search" class="form-control mr-2" placeholder="Cari Nomor atau Provinsi..." value="{{ request('search') }}">
-                <button type="submit" class="btn btn-info">Cari</button>
+                <button type="submit" class="btn btn-info"><i class="mdi mdi-magnify mdi-24px"></i>Cari</button>
             </form>
         </div>
     </div>
@@ -68,14 +68,14 @@
                                 @endif
                             </td>
                             <td>
-                                <a href="{{ route('admin.poles.edit', $pole->id) }}" class="btn btn-sm btn-warning mb-1">
-                                    <i class="fas fa-edit"></i>
+                                <a href="{{ route('admin.poles.edit', $pole->id) }}" class="btn btn-sm btn-warning mb-1 px-2 py-1">
+                                    <i class="mdi mdi-square-edit-outline mdi-24px"></i>
                                 </a>
                                 <form action="{{ route('admin.poles.destroy', $pole->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus tiang ini? Data relasional seperti Lampu, IoT, dan CCTV juga akan terhapus!');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger mb-1">
-                                        <i class="fas fa-trash"></i>
+                                    <button type="submit" class="btn btn-sm btn-danger mb-1 px-2 py-1">
+                                        <i class="mdi mdi-delete-outline mdi-24px"></i>
                                     </button>
                                 </form>
                             </td>
