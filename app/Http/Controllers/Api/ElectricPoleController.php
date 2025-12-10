@@ -64,9 +64,27 @@ class ElectricPoleController extends Controller
     /**
      * GET: Mengambil daftar semua tiang listrik.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $poles = ElectricPole::latest()->get();
+        $keyword    = $request->keyword;
+        $sortBy     = $request->sort_by ?? 'created_at';
+        $sortOrder  = $request->sort_order ?? 'desc';
+
+        $query = ElectricPole::query();
+
+        if ($keyword) {
+            $query->where(function ($q) use ($keyword) {
+                $q->where('nomor', 'like', '%' . $keyword . '%')
+                ->orWhere('kode', 'like', '%' . $keyword . '%');
+            });
+        }
+
+        if (in_array($sortOrder, ['asc', 'desc'])) {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        $poles = $query->get();
+
         return response()->json([
             'message' => 'Daftar tiang listrik berhasil diambil',
             'data' => $poles

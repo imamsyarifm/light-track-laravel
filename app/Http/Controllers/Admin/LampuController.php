@@ -23,10 +23,12 @@ class LampuController extends Controller
         $lampus = Lampu::with('electricPole')
             ->latest()
             ->when($search, function ($query, $search) {
-                return $query->where('nomor', 'like', "%{$search}%")
-                             ->orWhereHas('electricPole', function ($q) use ($search) {
-                                 $q->where('kode', 'like', "%{$search}%");
-                             });
+                $query->where(function ($q) use ($search) {
+                    $q->where('nomor', 'like', "%{$search}%")
+                    ->orWhereHas('electricPole', function ($sub) use ($search) {
+                        $sub->where('kode', 'like', "%{$search}%");
+                    });
+                });
             })
             ->paginate(15)
             ->withQueryString();

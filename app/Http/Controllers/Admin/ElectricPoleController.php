@@ -41,12 +41,14 @@ class ElectricPoleController extends Controller
         $search = request('search');
         
         $poles = ElectricPole::latest()
-            ->when($search, function ($query, $search) {
-                return $query->where('nomor', 'like', "%{$search}%")
-                             ->orWhere('provinsi', 'like', "%{$search}%")
-                             ->orWhere('kota_kabupaten', 'like', "%{$search}%");
-            })
-            ->paginate(15);
+                ->when($search, function ($query, $search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('nomor', 'like', "%{$search}%")
+                        ->orWhere('provinsi', 'like', "%{$search}%")
+                        ->orWhere('kota_kabupaten', 'like', "%{$search}%");
+                    });
+                })
+                ->paginate(15);
 
         return view('admin.poles.index', compact('poles'));
     }
