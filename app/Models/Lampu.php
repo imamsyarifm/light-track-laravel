@@ -15,7 +15,11 @@ class Lampu extends Model
         'kode',
         'electric_pole_id',
         'koordinat',
-        'foto_url',
+        'foto_urls',
+    ];
+
+    protected $casts = [
+        'foto_urls' => 'array',
     ];
 
     public function electricPole(): BelongsTo

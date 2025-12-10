@@ -25,6 +25,15 @@ class ElectricPole extends Model
         'kelurahan_desa',
         'alamat',
         'koordinat',
-        'foto_url',
+        'foto_urls',
+    ];
+    
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'foto_urls' => 'array',
     ];
 }
