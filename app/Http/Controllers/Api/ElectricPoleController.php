@@ -74,8 +74,8 @@ class ElectricPoleController extends Controller
 
         if ($keyword) {
             $query->where(function ($q) use ($keyword) {
-                $q->where('name', 'like', '%' . $keyword . '%')
-                ->orWhere('code', 'like', '%' . $keyword . '%');
+                $q->where('nomor', 'like', '%' . $keyword . '%')
+                ->orWhere('kode', 'like', '%' . $keyword . '%');
             });
         }
 
