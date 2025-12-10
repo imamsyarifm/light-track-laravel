@@ -5,19 +5,28 @@ namespace App\Http\Controllers\Api;
 use App\Models\Lampu;
 use App\Models\ElectricPole;
 use App\Http\Controllers\Controller;
+use App\Services\FileUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class LampuController extends Controller
 {
+    protected $fileUploadService;
+
+    public function __construct(FileUploadService $fileUploadService)
+    {
+        $this->fileUploadService = $fileUploadService;
+    }
+    
     private function validationRules(string $method, Lampu $lampu = null)
     {
         $rules = [
             'electric_pole_id' => ['required', 'exists:electric_poles,id'],
             'nomor'            => ['required', 'string', 'max:255'],
             'koordinat'        => ['nullable', 'string', 'max:255'],
-            'foto'             => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'foto'             => ['nullable', 'array', 'max:4'],
+            'foto.*'           => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ];
 
         if ($method === 'store') {
@@ -52,11 +61,7 @@ class LampuController extends Controller
         
         $data = $request->except('foto');
         $data['kode'] = $pole->kode . '-' . $data['nomor'];
-
-        if ($request->hasFile('foto')) {
-            $path = $request->file('foto')->store('lampus', 'public'); 
-            $data['foto_url'] = Storage::url($path); 
-        }
+        $data['foto_urls'] = $this->fileUploadService->handleMultipleUpload($request, 'foto', 'lampus');
         
         $lampu = Lampu::create($data);
 
@@ -93,18 +98,13 @@ class LampuController extends Controller
 
         $data = $request->except('foto');
         $data['kode'] = $pole->kode . '-' . $data['nomor'];
-        
-        if ($request->hasFile('foto')) {
-            if ($lampu->foto_url) {
-                $oldPath = str_replace(Storage::url(''), '', $lampu->foto_url); 
-                Storage::disk('public')->delete($oldPath);
-            }
-            
-            $path = $request->file('foto')->store('lampus', 'public');
-            $data['foto_url'] = Storage::url($path);
-        } else {
-            $data['foto_url'] = $lampu->foto_url;
-        }
+        $data['foto_urls'] = $this->fileUploadService->updateMultipleUpload(
+            $request, 
+            $lampu, 
+            'foto', 
+            'foto_urls',
+            'lampus' 
+        );
         
         $lampu->update($data);
 
@@ -119,6 +119,7 @@ class LampuController extends Controller
             return response()->json(['message' => 'Data lampu tidak ditemukan'], 404);
         }
 
+        $this->fileUploadService->deleteMultipleFiles($lampu->foto_urls);
         $lampu->delete();
 
         return response()->json(['message' => 'Data lampu berhasil dihapus']);
