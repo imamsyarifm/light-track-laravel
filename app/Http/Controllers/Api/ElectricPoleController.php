@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\ElectricPole;
 use App\Http\Controllers\Controller;
+use App\Services\FileUploadService;
 use App\Services\WilayahService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -11,10 +12,12 @@ use Illuminate\Support\Facades\Validator;
 
 class ElectricPoleController extends Controller
 {
+    protected $fileUploadService;
     protected $wilayahService;
 
-    public function __construct(WilayahService $wilayahService)
+    public function __construct(FileUploadService $fileUploadService, WilayahService $wilayahService)
     {
+        $this->fileUploadService = $fileUploadService;
         $this->wilayahService = $wilayahService;
     }
 
@@ -28,7 +31,8 @@ class ElectricPoleController extends Controller
             'kelurahan_desa' => ['required', 'string', 'max:255'],
             'alamat'         => ['required', 'string'],
             'koordinat'      => ['nullable', 'string', 'max:255'],
-            'foto'           => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'foto'           => ['nullable', 'array', 'max:4'],
+            'foto.*'         => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ];
 
         if ($method === 'store') {
@@ -112,10 +116,7 @@ class ElectricPoleController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
-        if ($request->hasFile('foto')) {
-            $path = $request->file('foto')->store('electric_poles', 'public'); 
-            $data['foto_url'] = Storage::url($path); 
-        }
+        $data['foto_urls'] = $this->fileUploadService->handleMultipleUpload($request, 'foto', 'electric_poles');
         
         $pole = ElectricPole::create($data);
 
@@ -173,17 +174,13 @@ class ElectricPoleController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
         
-        if ($request->hasFile('foto')) {
-            if ($pole->foto_url) {
-                $oldPath = str_replace(Storage::url(''), '', $pole->foto_url); 
-                Storage::disk('public')->delete($oldPath);
-            }
-            
-            $path = $request->file('foto')->store('electric_poles', 'public');
-            $data['foto_url'] = Storage::url($path);
-        } else {
-            $data['foto_url'] = $pole->foto_url;
-        }
+        $data['foto_urls'] = $this->fileUploadService->updateMultipleUpload(
+            $request, 
+            $pole, 
+            'foto', 
+            'foto_urls',
+            'electric_poles' 
+        );
         
         $pole->update($data);
 
@@ -205,7 +202,8 @@ class ElectricPoleController extends Controller
                 'message' => 'Data tiang listrik tidak ditemukan'
             ], 404);
         }
-
+        
+        $this->fileUploadService->deleteMultipleFiles($pole->foto_urls);
         $pole->delete();
 
         return response()->json([

@@ -4,59 +4,102 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Cctv;
 use App\Models\ElectricPole;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Storage;
+use App\Services\FileUploadService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class CctvController extends Controller
 {
-    public function create()
+    protected $fileUploadService;
+
+    public function __construct(FileUploadService $fileUploadService)
     {
-        $poles = ElectricPole::select('id', 'nomor', 'kode')->get();
-        return "CCTV Create Form. Tiang Listrik tersedia: {$poles->count()}";
+        $this->fileUploadService = $fileUploadService;
+    }
+    
+    private function validationRules(string $method, Cctv $cctv = null)
+    {
+        $rules = [
+            'electric_pole_id' => ['required', 'exists:electric_poles,id'],
+            'nomor'            => ['required', 'string', 'max:255'],
+            'koordinat'        => ['nullable', 'string', 'max:255'],
+            'foto'             => ['nullable', 'array', 'max:4'],
+            'foto.*'           => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+        ];
+
+        if ($method === 'store') {
+            $rules['nomor'][] = 'unique:cctvs,nomor';
+        }
+
+        if ($method === 'update' && $cctv) {
+            $rules['nomor'][] = 'unique:cctvs,nomor,' . $cctv->id;
+        }
+
+        return $rules;
     }
 
     public function index()
     {
-        $cctv = Cctv::latest()->get();
-        return "CCTV Index (Total: {$cctv->count()})";
+        $search = request('search');
+        
+        $cctvs = Cctv::with('electricPole')
+            ->latest()
+            ->when($search, function ($query, $search) {
+                return $query->where('nomor', 'like', "%{$search}%")
+                             ->orWhere('merk', 'like', "%{$search}%")
+                             ->orWhereHas('electricPole', function ($q) use ($search) {
+                                 $q->where('kode', 'like', "%{$search}%");
+                             });
+            })
+            ->paginate(15)
+            ->withQueryString();
+            
+        return view('admin.cctvs.index', compact('cctvs'));
+    }
+
+    public function create()
+    {
+        $poles = ElectricPole::select('id', 'nomor', 'kode')->get();
+        return view('admin.cctvs.create', compact('poles'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'electric_pole_id' => 'required|exists:electric_poles,id',
-            'nomor'            => 'required|string|unique:cctvs,nomor',
-            'koordinat'        => 'nullable|string',
-            'foto'             => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        $validator = Validator::make($request->all(), $this->validationRules('store'));
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
         
         $pole = ElectricPole::findOrFail($request->electric_pole_id);
 
         $data = $request->except('foto');
         $data['kode'] = $pole->kode . '-' . $data['nomor']; 
+        $data['foto_urls'] = $this->fileUploadService->handleMultipleUpload($request, 'foto', 'cctvs');
 
-        if ($request->hasFile('foto')) {
-            $path = $request->file('foto')->store('cctvs', 'public'); 
-            $data['foto_url'] = Storage::url($path); 
-        }
-
-        Cctv::create($data);
-        return "SUCCESS: CCTV '{$data['kode']}' berhasil ditambahkan. Redirecting...";
+        $cctv = Cctv::create($data);
+        
+        return redirect()->route('admin.cctvs.index')->with('success', "CCTV '{$data['kode']}' berhasil ditambahkan.");
     }
 
     public function edit(Cctv $cctv)
     {
-        return "CCTV Edit Form for ID: {$cctv->id}";
+        $poles = ElectricPole::select('id', 'nomor', 'kode')->get();
+        return view('admin.cctvs.edit', compact('cctv', 'poles'));
     }
     
     public function update(Request $request, Cctv $cctv)
     {
-        $request->validate([
-            'electric_pole_id'  => 'required|exists:electric_poles,id',
-            'nomor'             => 'required|string|unique:cctvs,nomor,' . $cctv->id, 
-            'foto'              => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        $validator = Validator::make($request->all(), $this->validationRules('update', $cctv));
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
         $poleId = $request->has('electric_pole_id') ? $request->electric_pole_id : $cctv->electric_pole_id;
         $pole = ElectricPole::findOrFail($poleId);
@@ -64,30 +107,23 @@ class CctvController extends Controller
         $data = $request->except('foto');
         $data['kode'] = $pole->kode . '-' . $data['nomor'];
 
-        if ($request->hasFile('foto')) {
-            if ($cctv->foto_url) { 
-                $oldPath = str_replace(Storage::url(''), '', $cctv->foto_url); 
-                Storage::disk('public')->delete($oldPath);
-            }
-            
-            $path = $request->file('foto')->store('cctvs', 'public'); 
-            $data['foto_url'] = Storage::url($path);
-        } else {
-            $data['foto_url'] = $cctv->foto_url;
-        }
+        $data['foto_urls'] = $this->fileUploadService->updateMultipleUpload(
+            $request, 
+            $cctv, 
+            'foto', 
+            'foto_urls',
+            'cctvs'
+        );
 
         $cctv->update($data);
-        return "SUCCESS: CCTV ID {$cctv->id} diperbarui. Redirecting...";
+        return redirect()->route('admin.cctvs.index')->with('success', "CCTV '{$cctv->kode}' berhasil diperbarui.");
     }
 
     public function destroy(Cctv $cctv)
     {
-        if ($cctv->foto_url) {
-            $oldPath = str_replace(Storage::url(''), '', $cctv->foto_url); 
-            Storage::disk('public')->delete($oldPath);
-        }
+        $this->fileUploadService->deleteMultipleFiles($cctv->foto_urls ?? []);
         $cctv->delete();
         
-        return "SUCCESS: CCTV ID {$cctv->id} dihapus. Redirecting...";
+        return redirect()->route('admin.cctvs.index')->with('success', "CCTV '{$cctv->kode}' berhasil dihapus.");
     }
 }
