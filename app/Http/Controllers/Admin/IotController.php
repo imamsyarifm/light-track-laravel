@@ -4,59 +4,102 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Iot;
 use App\Models\ElectricPole;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Storage;
+use App\Services\FileUploadService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class IotController extends Controller
 {
-    public function create()
+    protected $fileUploadService;
+
+    public function __construct(FileUploadService $fileUploadService)
     {
-        $poles = ElectricPole::select('id', 'nomor', 'kode')->get();
-        return "IoT Create Form. Tiang Listrik tersedia: {$poles->count()}";
+        $this->fileUploadService = $fileUploadService;
+    }
+    
+    private function validationRules(string $method, Iot $iot = null)
+    {
+        $rules = [
+            'electric_pole_id' => ['required', 'exists:electric_poles,id'],
+            'nomor'            => ['required', 'string', 'max:255'],
+            'koordinat'        => ['nullable', 'string', 'max:255'],
+            'foto'             => ['nullable', 'array', 'max:4'],
+            'foto.*'           => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+        ];
+
+        if ($method === 'store') {
+            $rules['nomor'][] = 'unique:iots,nomor';
+        }
+
+        if ($method === 'update' && $iot) {
+            $rules['nomor'][] = 'unique:iots,nomor,' . $iot->id;
+        }
+
+        return $rules;
     }
 
     public function index()
     {
-        $iot = Iot::latest()->get();
-        return "IoT Index (Total: {$iot->count()})";
+        $search = request('search');
+        
+        $iots = Iot::with('electricPole')
+            ->latest()
+            ->when($search, function ($query, $search) {
+                return $query->where('nomor', 'like', "%{$search}%")
+                             ->orWhere('status', 'like', "%{$search}%")
+                             ->orWhereHas('electricPole', function ($q) use ($search) {
+                                 $q->where('kode', 'like', "%{$search}%");
+                             });
+            })
+            ->paginate(15)
+            ->withQueryString();
+            
+        return view('admin.iots.index', compact('iots'));
+    }
+
+    public function create()
+    {
+        $poles = ElectricPole::select('id', 'nomor', 'kode')->get();
+        return view('admin.iots.create', compact('poles'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'electric_pole_id' => 'required|exists:electric_poles,id',
-            'nomor'            => 'required|string|unique:iots,nomor',
-            'koordinat'        => 'nullable|string',
-            'foto'             => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        $validator = Validator::make($request->all(), $this->validationRules('store'));
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
         
         $pole = ElectricPole::findOrFail($request->electric_pole_id);
 
         $data = $request->except('foto');
         $data['kode'] = $pole->kode . '-' . $data['nomor']; 
+        $data['foto_urls'] = $this->fileUploadService->handleMultipleUpload($request, 'foto', 'iots');
 
-        if ($request->hasFile('foto')) {
-            $path = $request->file('foto')->store('iots', 'public'); 
-            $data['foto_url'] = Storage::url($path); 
-        }
-
-        Iot::create($data);
-        return "SUCCESS: IoT '{$data['kode']}' berhasil ditambahkan. Redirecting...";
+        $iot = Iot::create($data);
+        
+        return redirect()->route('admin.iots.index')->with('success', "IoT '{$data['kode']}' berhasil ditambahkan.");
     }
 
     public function edit(Iot $iot)
     {
-        return "IoT Edit Form for ID: {$iot->id}";
+        $poles = ElectricPole::select('id', 'nomor', 'kode')->get();
+        return view('admin.iots.edit', compact('iot', 'poles'));
     }
-
+    
     public function update(Request $request, Iot $iot)
     {
-        $request->validate([
-            'electric_pole_id'  => 'required|exists:electric_poles,id',
-            'nomor'             => 'required|string|unique:iots,nomor,' . $iot->id, 
-            'foto'              => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        $validator = Validator::make($request->all(), $this->validationRules('update', $iot));
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
         $poleId = $request->has('electric_pole_id') ? $request->electric_pole_id : $iot->electric_pole_id;
         $pole = ElectricPole::findOrFail($poleId);
@@ -64,30 +107,23 @@ class IotController extends Controller
         $data = $request->except('foto');
         $data['kode'] = $pole->kode . '-' . $data['nomor'];
 
-        if ($request->hasFile('foto')) {
-            if ($iot->foto_url) { 
-                $oldPath = str_replace(Storage::url(''), '', $iot->foto_url); 
-                Storage::disk('public')->delete($oldPath);
-            }
-            
-            $path = $request->file('foto')->store('iots', 'public'); 
-            $data['foto_url'] = Storage::url($path);
-        } else {
-            $data['foto_url'] = $iot->foto_url;
-        }
+        $data['foto_urls'] = $this->fileUploadService->updateMultipleUpload(
+            $request, 
+            $iot, 
+            'foto', 
+            'foto_urls',
+            'iots'
+        );
 
         $iot->update($data);
-        return "SUCCESS: IoT ID {$iot->id} diperbarui. Redirecting...";
+        return redirect()->route('admin.iots.index')->with('success', "IoT '{$iot->kode}' berhasil diperbarui.");
     }
 
     public function destroy(Iot $iot)
     {
-        if ($iot->foto_url) {
-            $oldPath = str_replace(Storage::url(''), '', $iot->foto_url); 
-            Storage::disk('public')->delete($oldPath);
-        }
+        $this->fileUploadService->deleteMultipleFiles($iot->foto_urls ?? []);
         $iot->delete();
-        
-        return "SUCCESS: IoT ID {$iot->id} dihapus. Redirecting...";
+
+        return redirect()->route('admin.iots.index')->with('success', "IoT '{$iot->kode}' berhasil dihapus.");
     }
 }

@@ -4,16 +4,39 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Lampu;
 use App\Models\ElectricPole;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Storage;
+use App\Services\FileUploadService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class LampuController extends Controller
 {
-    public function create()
+    protected $fileUploadService;
+
+    public function __construct(FileUploadService $fileUploadService)
     {
-        $poles = ElectricPole::select('id', 'nomor', 'kode')->get();
-        return view('admin.lampus.create', compact('poles'));
+        $this->fileUploadService = $fileUploadService;
+    }
+    
+    private function validationRules(string $method, Lampu $lampu = null)
+    {
+        $rules = [
+            'electric_pole_id' => ['required', 'exists:electric_poles,id'],
+            'nomor'            => ['required', 'string', 'max:255'],
+            'koordinat'        => ['nullable', 'string', 'max:255'],
+            'foto'             => ['nullable', 'array', 'max:4'],
+            'foto.*'           => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+        ];
+
+        if ($method === 'store') {
+            $rules['nomor'][] = 'unique:lampus,nomor';
+        }
+
+        if ($method === 'update' && $lampu) {
+            $rules['nomor'][] = 'unique:lampus,nomor,' . $lampu->id;
+        }
+
+        return $rules;
     }
 
     public function index()
@@ -34,29 +57,31 @@ class LampuController extends Controller
         return view('admin.lampus.index', compact('lampus'));
     }
 
+    public function create()
+    {
+        $poles = ElectricPole::select('id', 'nomor', 'kode')->get();
+        return view('admin.lampus.create', compact('poles'));
+    }
+
     public function store(Request $request)
     {
-        $request->validate([
-            'electric_pole_id' => 'required|exists:electric_poles,id',
-            'nomor'            => 'required|string|unique:lampus,nomor',
-            'koordinat'        => 'nullable|string',
-            'foto'             => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        $validator = Validator::make($request->all(), $this->validationRules('store'));
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
         
         $pole = ElectricPole::findOrFail($request->electric_pole_id);
 
         $data = $request->except('foto');
         $data['kode'] = $pole->kode . '-' . $data['nomor']; 
-
-        if ($request->hasFile('foto')) {
-            $path = $request->file('foto')->store('lampus', 'public'); 
-            $data['foto_url'] = Storage::url($path); 
-        } else {
-            $data['foto_url'] = null;
-        }
+        $data['foto_urls'] = $this->fileUploadService->handleMultipleUpload($request, 'foto', 'lampus');
 
         Lampu::create($data);
-        return redirect('/lampu')->with('success', "Lampu '{$data['kode']}' berhasil ditambahkan.");
+        
+        return redirect()->route('admin.lampus.index')->with('success', "Lampu '{$data['kode']}' berhasil ditambahkan.");
     }
 
     public function edit(Lampu $lampu)
@@ -67,12 +92,13 @@ class LampuController extends Controller
     
     public function update(Request $request, Lampu $lampu)
     {
-        $request->validate([
-            'electric_pole_id'  => 'required|exists:electric_poles,id',
-            'nomor'             => 'required|string|unique:lampus,nomor,' . $lampu->id, 
-            // 'koordinat'         => 'nullable|string',
-            'foto'              => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        $validator = Validator::make($request->all(), $this->validationRules('update', $lampu));
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
         $poleId = $request->has('electric_pole_id') ? $request->electric_pole_id : $lampu->electric_pole_id;
         $pole = ElectricPole::findOrFail($poleId);
@@ -80,17 +106,13 @@ class LampuController extends Controller
         $data = $request->except('foto');
         $data['kode'] = $pole->kode . '-' . $data['nomor'];
 
-        if ($request->hasFile('foto')) {
-            if ($lampu->foto_url) { 
-                $oldPath = str_replace(Storage::url(''), '', $lampu->foto_url); 
-                Storage::disk('public')->delete($oldPath);
-            }
-            
-            $path = $request->file('foto')->store('lampus', 'public'); 
-            $data['foto_url'] = Storage::url($path);
-        } else {
-            $data['foto_url'] = $lampu->foto_url;
-        }
+        $data['foto_urls'] = $this->fileUploadService->updateMultipleUpload(
+            $request, 
+            $lampu, 
+            'foto', 
+            'foto_urls',
+            'lampus'
+        );
 
         $lampu->update($data);
         return redirect()->route('admin.lampus.index')->with('success', "Lampu '{$lampu->kode}' berhasil diperbarui.");
@@ -98,10 +120,7 @@ class LampuController extends Controller
 
     public function destroy(Lampu $lampu)
     {
-        if ($lampu->foto_url) {
-            $oldPath = str_replace(Storage::url(''), '', $lampu->foto_url); 
-            Storage::disk('public')->delete($oldPath);
-        }
+        $this->fileUploadService->deleteMultipleFiles($lampu->foto_urls ?? []);
         $lampu->delete();
         
         return redirect()->route('admin.lampus.index')->with('success', "Lampu '{$lampu->kode}' berhasil dihapus.");
