@@ -36,4 +36,19 @@ class ElectricPole extends Model
     protected $casts = [
         'foto_urls' => 'array',
     ];
+
+    public function lampus()
+    {
+        return $this->hasMany(Lampu::class);
+    }
+
+    public function iots() 
+    {
+        return $this->hasMany(Iot::class);
+    }
+
+    public function cctvs()
+    {
+        return $this->hasMany(Cctv::class);
+    }
 }

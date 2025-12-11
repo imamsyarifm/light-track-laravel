@@ -210,4 +210,21 @@ class ElectricPoleController extends Controller
             'message' => 'Data tiang listrik berhasil dihapus'
         ]);
     }
+
+    public function showWithRelations(string $id)
+    {
+        $pole = ElectricPole::with(['lampus', 'iots', 'cctvs'])
+                            ->find($id);
+
+        if (!$pole) {
+            return response()->json([
+                'message' => 'Tiang Listrik tidak ditemukan'
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Detail Tiang Listrik beserta relasi berhasil diambil',
+            'data' => $pole
+        ]);
+    }
 }

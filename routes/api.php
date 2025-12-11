@@ -23,7 +23,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Electric Poles - Tiang Listrik
     Route::resource('electric-poles', ElectricPoleController::class)->except(['create', 'edit']);
-    
+    Route::get('/electric-poles/{id}/relations', [ElectricPoleController::class, 'showWithRelations']);
+
     // Lampu
     Route::resource('lampus', LampuController::class)->except(['create', 'edit']);
 
