@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\LampuController;
 use App\Http\Controllers\Admin\ElectricPoleController;
+use App\Http\Controllers\Admin\CctvController;
+use App\Http\Controllers\Admin\IotController;
 
 
 Route::middleware('guest')->get('/', function () {
@@ -34,4 +36,5 @@ require __DIR__.'/admin.php';
 
 Route::resource('lampu', LampuController::class);
 Route::resource('tiang-lampu', ElectricPoleController::class);
-
+Route::resource('cctv', CctvController::class);
+Route::resource('iot', IotController::class);
