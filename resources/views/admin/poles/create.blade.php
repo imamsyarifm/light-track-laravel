@@ -11,7 +11,6 @@
     
     <hr>
 
-    {{-- Pesan Error Global --}}
     @if (session('error'))
         <div class="alert alert-danger">{{ session('error') }}</div>
     @endif
@@ -19,16 +18,13 @@
     <div class="card shadow mb-4">
         <div class="card-body">
             
-            {{-- PENTING: enctype="multipart/form-data" diperlukan untuk upload file --}}
             <form action="{{ route('admin.poles.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 
-                {{-- Bagian 1: Data Identitas Tiang --}}
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="nomor">Nomor Tiang Listrik</label>
-                            {{-- Field 'nomor' digunakan untuk komputasi kode YY ZZ [999999] --}}
                             <input type="text" name="nomor" id="nomor" class="form-control @error('nomor') is-invalid @enderror" 
                                    value="{{ old('nomor') }}" required placeholder="Contoh: T123456">
                             @error('nomor')
@@ -38,13 +34,11 @@
                     </div>
                 </div>
 
-                {{-- Bagian 2: Data Lokasi Geografis (Digunakan untuk Komputasi Kode Wilayah) --}}
                 <h5 class="mt-4 mb-3">Data Lokasi (Kode Wilayah)</h5>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="provinsi">Provinsi</label>
-                            {{-- PENTING: Pastikan input ini menggunakan NAMA provinsi yang persis sama dengan API wilayah.id --}}
                             <input type="text" name="provinsi" id="provinsi" class="form-control @error('provinsi') is-invalid @enderror" 
                                    value="{{ old('provinsi') }}" required placeholder="Contoh: JAWA BARAT">
                             @error('provinsi')
@@ -55,7 +49,6 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="kota_kabupaten">Kota/Kabupaten</label>
-                            {{-- PENTING: Pastikan input ini menggunakan NAMA kota/kabupaten yang persis sama dengan API wilayah.id --}}
                             <input type="text" name="kota_kabupaten" id="kota_kabupaten" class="form-control @error('kota_kabupaten') is-invalid @enderror" 
                                    value="{{ old('kota_kabupaten') }}" required placeholder="Contoh: KOTA BANDUNG">
                             @error('kota_kabupaten')
@@ -65,7 +58,6 @@
                     </div>
                 </div>
 
-                {{-- Bagian 3: Detail Alamat & Koordinat --}}
                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
@@ -107,24 +99,26 @@
                     @enderror
                 </div>
 
-                {{-- Bagian 4: Upload Foto --}}
                 <h5 class="mt-4 mb-3">Foto Tiang</h5>
                 <div class="form-group">
-                    <label for="foto">Unggah Foto Tiang (Max 2MB, JPEG/PNG/JPG)</label>
-                    <input type="file" name="foto" id="foto" class="form-control-file @error('foto') is-invalid @enderror">
+                    <label for="foto">Unggah Foto Tiang (Maks. 4 Foto, Max 2MB/foto)</label>
+                    <input type="file" name="foto[]" id="foto" class="form-control-file @error('foto') is-invalid @enderror @error('foto.*') is-invalid @enderror" 
+                           multiple> 
+                    <small class="form-text text-muted">Anda dapat memilih hingga 4 foto sekaligus.</small>
                     @error('foto')
                         <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                    @error('foto.*') 
+                        <div class="invalid-feedback d-block">{{ $message }}</div> 
                     @enderror
                 </div>
                 
                 <hr>
                 
-                {{-- Tombol Submit --}}
                 <button type="submit" class="btn btn-primary mt-3">Simpan Data Tiang</button>
                 <a href="{{ route('admin.poles.index') }}" class="btn btn-secondary mt-3">Batal</a>
 
             </form>
-            
         </div>
     </div>
 

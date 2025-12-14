@@ -43,7 +43,7 @@
                         <div class="form-group">
                             <label for="nomor">Nomor Cctv</label>
                             <input type="text" name="nomor" id="nomor" class="form-control @error('nomor') is-invalid @enderror" 
-                                   value="{{ old('nomor') }}" required placeholder="Contoh: LA001 (Huruf Kapital)">
+                                   value="{{ old('nomor') }}" required placeholder="Contoh: CCTV01 (Huruf Kapital)">
                             @error('nomor')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -63,10 +63,15 @@
 
                 <h5 class="mt-4 mb-3">Foto Cctv</h5>
                 <div class="form-group">
-                    <label for="foto">Unggah Foto Cctv (Max 2MB)</label>
-                    <input type="file" name="foto" id="foto" class="form-control-file @error('foto') is-invalid @enderror">
+                    <label for="foto">Unggah Foto Cctv (Maks. 4 Foto, Max 2MB/foto)</label>
+                    <input type="file" name="foto[]" id="foto" class="form-control-file @error('foto') is-invalid @enderror @error('foto.*') is-invalid @enderror" 
+                           multiple>
+                    <small class="form-text text-muted">Anda dapat memilih hingga 4 foto sekaligus.</small>
                     @error('foto')
                         <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                    @error('foto.*') 
+                        <div class="invalid-feedback d-block">{{ $message }}</div> 
                     @enderror
                 </div>
                 

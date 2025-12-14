@@ -63,10 +63,15 @@
 
                 <h5 class="mt-4 mb-3">Foto Lampu</h5>
                 <div class="form-group">
-                    <label for="foto">Unggah Foto Lampu (Max 2MB)</label>
-                    <input type="file" name="foto" id="foto" class="form-control-file @error('foto') is-invalid @enderror">
+                    <label for="foto">Unggah Foto Lampu (Maks. 4 Foto, Max 2MB/foto)</label>
+                    <input type="file" name="foto[]" id="foto" class="form-control-file @error('foto') is-invalid @enderror @error('foto.*') is-invalid @enderror" 
+                           multiple>
+                    <small class="form-text text-muted">Anda dapat memilih hingga 4 foto sekaligus.</small>
                     @error('foto')
                         <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                    @error('foto.*') 
+                        <div class="invalid-feedback d-block">{{ $message }}</div> 
                     @enderror
                 </div>
                 
