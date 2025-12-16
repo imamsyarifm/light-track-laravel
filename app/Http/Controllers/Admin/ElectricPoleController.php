@@ -81,6 +81,12 @@ class ElectricPoleController extends Controller
         return view('admin.poles.index', compact('poles'));
     }
 
+    public function show($id)
+    {
+        $pole = ElectricPole::with(['lampus', 'iots', 'cctvs'])->findOrFail($id);
+        return view('admin.poles.show', compact('pole'));
+    }
+
     public function create()
     {
         return view('admin.poles.create');

@@ -2,6 +2,8 @@
 
 function menuData()
 {
+    $prefixUrl = 'admin';
+
     return [
         (object)[
             'menu' => [
@@ -15,7 +17,7 @@ function menuData()
                     'name' => 'Lampu',
                     'icon' => 'mdi-lightbulb-on-outline mdi-24px',
                     'slug' => 'lampu',
-                    'url'  => '/lampu',
+                    'url'  => $prefixUrl . '/lampu',
                     'active_on' => [
                         'lampu',
                         'admin/lampus/',
@@ -25,10 +27,10 @@ function menuData()
                 (object)[
                     'name' => 'Tiang Lampu',
                     'icon' => 'mdi-lamps-outline mdi-24px',
-                    'slug' => 'tiang-lampu',
-                    'url'  => '/tiang-lampu',
+                    'slug' => 'poles',
+                    'url'  => $prefixUrl . '/poles',
                     'active_on' => [
-                        'tiang-lampu',
+                        'poles',
                         'admin/poles/',
                         'admin/poles/*',
                     ]
@@ -37,7 +39,7 @@ function menuData()
                     'name' => 'CCTV',
                     'icon' => 'mdi mdi-cctv mdi-24px',
                     'slug' => 'cctv',
-                    'url'  => '/cctv',
+                    'url'  => $prefixUrl . '/cctv',
                     'active_on' => [
                         'cctv',
                         'admin/cctv/',
@@ -48,7 +50,7 @@ function menuData()
                     'name' => 'IoT',
                     'icon' => 'mdi mdi-access-point-network mdi-24px',
                     'slug' => 'iot',
-                    'url'  => '/iot',
+                    'url'  => $prefixUrl . '/iot',
                     'active_on' => [
                         'iot',
                         'admin/iot/',

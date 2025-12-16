@@ -15,6 +15,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     })->name('dashboard');
 
     Route::resource('poles', ElectricPoleController::class);
+    Route::get('/admin/poles/{id}', [ElectricPoleController::class, 'show'])->name('admin.poles.show');
+    
     Route::resource('lampus', LampuController::class);
     Route::resource('iots', IotController::class);
     Route::resource('cctvs', CctvController::class);
