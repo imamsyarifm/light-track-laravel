@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 // use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\Facades\View;
 use App\Http\View\Composers\MenuComposer;
+use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +26,8 @@ class AppServiceProvider extends ServiceProvider
         View::composer('*', function ($view) {
             $view->with('menuData', menuData());
         });
+        
+        Paginator::useBootstrapFive();
     }
 	
 }

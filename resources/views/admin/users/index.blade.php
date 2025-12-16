@@ -33,9 +33,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($users as $user)
+                    @forelse($users as $user)
                     <tr>
-                        <td>{{ $loop->iteration }}</td>
+                        <td>{{ $users->firstItem() + $loop->index }}</td>
                         <td>{{ $user->name }}</td>
                         <td>{{ $user->email }}</td>
                         <td>
@@ -45,16 +45,23 @@
                             <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline">
                                 @csrf
                                 @method('DELETE')
-                                <button class="btn btn-sm btn-danger mb-1 px-2 py-1" onclick="return confirm('Hapus user?')">
+                                <button class="btn btn-sm btn-danger mb-1 px-2 py-1"
+                                    onclick="return confirm('Hapus user?')">
                                     <i class="mdi mdi-delete-outline mdi-24px"></i>
                                 </button>
                             </form>
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">
+                            Tidak ada data user
+                        </td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
-
+            
             {{ $users->links() }}
         </div>
     </div>
