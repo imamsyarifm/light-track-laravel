@@ -45,7 +45,6 @@
                             <th>Nomor</th>
                             <th>Provinsi & Kota</th>
                             <th>Alamat</th>
-                            <th>Foto</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -61,13 +60,9 @@
                             <td>{{ $pole->provinsi }} - {{ $pole->kota_kabupaten }}</td>
                             <td>{{ Str::limit($pole->alamat, 50) }}</td>
                             <td>
-                                @if ($pole->foto_url)
-                                    <img src="{{ $pole->foto_url }}" alt="Foto Tiang" style="width: 50px; height: 50px; object-fit: cover;">
-                                @else
-                                    <i class="fas fa-image text-muted"></i>
-                                @endif
-                            </td>
-                            <td>
+                                <a href="{{ route('admin.poles.show', $pole->id) }}" class="btn btn-sm btn-info mb-1 px-2 py-1">
+                                    <i class="mdi mdi-eye-outline mdi-24px"></i>
+                                </a>
                                 <a href="{{ route('admin.poles.edit', $pole->id) }}" class="btn btn-sm btn-warning mb-1 px-2 py-1">
                                     <i class="mdi mdi-square-edit-outline mdi-24px"></i>
                                 </a>

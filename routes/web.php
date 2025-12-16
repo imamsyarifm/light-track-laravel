@@ -33,8 +33,3 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
 
 require __DIR__.'/auth.php';
 require __DIR__.'/admin.php';
-
-Route::resource('lampu', LampuController::class);
-Route::resource('tiang-lampu', ElectricPoleController::class);
-Route::resource('cctv', CctvController::class);
-Route::resource('iot', IotController::class);
