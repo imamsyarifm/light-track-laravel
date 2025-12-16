@@ -14,17 +14,6 @@ function menuData()
                     'slug' => 'dashboard',
                 ],
                 (object)[
-                    'name' => 'Lampu',
-                    'icon' => 'mdi-lightbulb-on-outline mdi-24px',
-                    'slug' => 'lampu',
-                    'url'  => $prefixUrl . '/lampu',
-                    'active_on' => [
-                        'lampu',
-                        'admin/lampus/',
-                        'admin/lampus/*',
-                    ]
-                ],
-                (object)[
                     'name' => 'Tiang Lampu',
                     'icon' => 'mdi-lamps-outline mdi-24px',
                     'slug' => 'poles',
@@ -33,6 +22,17 @@ function menuData()
                         'poles',
                         'admin/poles/',
                         'admin/poles/*',
+                    ]
+                ],
+                (object)[
+                    'name' => 'Lampu',
+                    'icon' => 'mdi-lightbulb-on-outline mdi-24px',
+                    'slug' => 'lampu',
+                    'url'  => $prefixUrl . '/lampu',
+                    'active_on' => [
+                        'lampu',
+                        'admin/lampus/',
+                        'admin/lampus/*',
                     ]
                 ],
                 (object)[
@@ -55,6 +55,17 @@ function menuData()
                         'iot',
                         'admin/iot/',
                         'admin/iot/*',
+                    ]
+                ],
+                (object)[
+                    'name' => 'User Management',
+                    'icon' => 'mdi mdi-access-point-network mdi-24px',
+                    'slug' => 'user',
+                    'url'  => $prefixUrl . '/user',
+                    'active_on' => [
+                        'user',
+                        'admin/user/',
+                        'admin/user/*',
                     ]
                 ],
             ]
