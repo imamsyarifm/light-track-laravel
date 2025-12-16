@@ -2,70 +2,63 @@
 
 function menuData()
 {
-    $prefixUrl = 'admin';
-
     return [
         (object)[
             'menu' => [
                 (object)[
                     'name' => 'Dashboard',
                     'icon' => 'mdi mdi-view-dashboard-outline mdi-24px',
-                    'url'  => route('dashboard'),
                     'slug' => 'dashboard',
+                    'url'  => route('dashboard'),
                 ],
                 (object)[
                     'name' => 'Tiang Lampu',
                     'icon' => 'mdi-lamps-outline mdi-24px',
                     'slug' => 'poles',
-                    'url'  => $prefixUrl . '/poles',
+                    'url'  => route('admin.poles.index'),
                     'active_on' => [
-                        'poles',
-                        'admin/poles/',
+                        'admin/poles',
                         'admin/poles/*',
                     ]
                 ],
                 (object)[
                     'name' => 'Lampu',
                     'icon' => 'mdi-lightbulb-on-outline mdi-24px',
-                    'slug' => 'lampu',
-                    'url'  => $prefixUrl . '/lampu',
+                    'slug' => 'lampus',
+                    'url'  => route('admin.lampus.index'),
                     'active_on' => [
-                        'lampu',
-                        'admin/lampus/',
+                        'admin/lampus',
                         'admin/lampus/*',
                     ]
                 ],
                 (object)[
                     'name' => 'CCTV',
                     'icon' => 'mdi mdi-cctv mdi-24px',
-                    'slug' => 'cctv',
-                    'url'  => $prefixUrl . '/cctv',
+                    'slug' => 'cctvs',
+                    'url'  => route('admin.cctvs.index'),
                     'active_on' => [
-                        'cctv',
-                        'admin/cctv/',
-                        'admin/cctv/*',
+                        'admin/cctvs',
+                        'admin/cctvs/*',
                     ]
                 ],
                 (object)[
                     'name' => 'IoT',
                     'icon' => 'mdi mdi-access-point-network mdi-24px',
-                    'slug' => 'iot',
-                    'url'  => $prefixUrl . '/iot',
+                    'slug' => 'iots',
+                    'url'  => route('admin.iots.index'),
                     'active_on' => [
-                        'iot',
-                        'admin/iot/',
-                        'admin/iot/*',
+                        'admin/iots',
+                        'admin/iots/*',
                     ]
                 ],
                 (object)[
                     'name' => 'User Management',
-                    'icon' => 'mdi mdi-access-point-network mdi-24px',
-                    'slug' => 'user',
-                    'url'  => $prefixUrl . '/user',
+                    'icon' => 'mdi mdi-account-multiple-outline mdi-24px',
+                    'slug' => 'users',
+                    'url'  => route('admin.users.index'),
                     'active_on' => [
-                        'user',
-                        'admin/user/',
-                        'admin/user/*',
+                        'admin/users',
+                        'admin/users/*',
                     ]
                 ],
             ]
