@@ -9,6 +9,7 @@ use App\Services\WilayahService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class ElectricPoleController extends Controller
 {
@@ -21,10 +22,9 @@ class ElectricPoleController extends Controller
         $this->wilayahService = $wilayahService;
     }
 
-    private function validationRules(string $method, ElectricPole $pole = null)
+    private function validationRules(string $method, Request $request, ElectricPole $pole = null)
     {
         $rules = [
-            'nomor'          => ['required', 'string', 'max:255'],
             'provinsi'       => ['required', 'string', 'max:255'],
             'kota_kabupaten' => ['required', 'string', 'max:255'],
             'kecamatan'      => ['required', 'string', 'max:255'],
@@ -35,13 +35,15 @@ class ElectricPoleController extends Controller
             'foto.*'         => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ];
 
-        if ($method === 'store') {
-            $rules['nomor'][] = 'unique:electric_poles,nomor';
-        }
+        $uniqueRule = Rule::unique('electric_poles')->where(function ($query) use ($request) {
+            return $query->where('kota_kabupaten', $request->kota_kabupaten);
+        });
 
         if ($method === 'update' && $pole) {
-            $rules['nomor'][] = 'unique:electric_poles,nomor,' . $pole->id;
+            $uniqueRule->ignore($pole->id);
         }
+
+        $rules['nomor'] = ['required', 'string', 'max:255', $uniqueRule];
 
         return $rules;
     }
@@ -100,7 +102,7 @@ class ElectricPoleController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), $this->validationRules('store'));
+        $validator = Validator::make($request->all(), $this->validationRules('store', $request));
 
         if ($validator->fails()) {
             return response()->json([
@@ -158,7 +160,10 @@ class ElectricPoleController extends Controller
             ], 404);
         }
         
-        $validator = Validator::make($request->all(), $this->validationRules('update', $pole));
+        $validator = Validator::make(
+            $request->all(), 
+            $this->validationRules('update', $request, $pole) 
+        );
 
         if ($validator->fails()) {
             return response()->json([
