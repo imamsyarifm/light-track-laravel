@@ -51,4 +51,15 @@ class ElectricPole extends Model
     {
         return $this->hasMany(Cctv::class);
     }
+
+    public function getFotoUrlsAttribute($value)
+    {
+        if (!$value) return [];
+        
+        $paths = json_decode($value, true) ?: [];
+        
+        return array_map(function ($path) {
+            return filter_var($path, FILTER_VALIDATE_URL) ? $path : asset('storage/' . $path);
+        }, $paths);
+    }
 }

@@ -32,7 +32,7 @@ class ElectricPoleController extends Controller
             'alamat'         => ['required', 'string'],
             'koordinat'      => ['nullable', 'string', 'max:255'],
             'foto'           => ['nullable', 'array', 'max:4'],
-            'foto.*'         => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'foto.*'         => ['nullable'],
         ];
 
         $uniqueRule = Rule::unique('electric_poles')->where(function ($query) use ($request) {
@@ -166,33 +166,48 @@ class ElectricPoleController extends Controller
         );
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
+            return $this->errorResponse('Validasi gagal', 422, $validator->errors());
         }
-        
-        $data = $request->except('foto');
-        try {
-            $data = $this->generateKode($data);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
-        
-        $data['foto_urls'] = $this->fileUploadService->updateMultipleUpload(
-            $request, 
-            $pole, 
-            'foto', 
-            'foto_urls',
-            'electric_poles' 
-        );
-        
-        $pole->update($data);
 
-        return response()->json([
-            'message' => 'Data tiang listrik berhasil diperbarui',
-            'data' => $pole
-        ]);
+        try {
+            $finalPaths = [];
+            $inputPhotos = $request->input('foto', []);
+
+            if (is_array($inputPhotos)) {
+                foreach ($inputPhotos as $item) {
+                    if (is_string($item) && !empty($item)) {
+                        $path = str_replace(asset('storage/'), '', $item);
+                        $finalPaths[] = $path;
+                    }
+                }
+            }
+
+            if ($request->hasFile('foto')) {
+                $newUploadedPaths = $this->fileUploadService->handleMultipleUpload($request, 'foto', 'electric_poles');
+                $finalPaths = array_merge($finalPaths, $newUploadedPaths);
+            }
+
+            $oldPathsInDb = $pole->foto_urls ?? [];
+            $deletedPaths = array_diff($oldPathsInDb, $finalPaths);
+            
+            foreach ($deletedPaths as $pathToDelete) {
+                if (Storage::disk('public')->exists($pathToDelete)) {
+                    Storage::disk('public')->delete($pathToDelete);
+                }
+            }
+
+            $data = $request->except('foto');
+            $data['foto_urls'] = $finalPaths;
+
+            $data = $this->generateKode($data);
+            
+            $pole->update($data);
+
+            return $this->successResponse($pole, 'Data tiang listrik berhasil diperbarui');
+
+        } catch (\Exception $e) {
+            return $this->errorResponse('Terjadi kesalahan: ' . $e->getMessage(), 500);
+        }
     }
 
     /**

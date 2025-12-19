@@ -15,29 +15,22 @@ class FileUploadService
      */
     public function handleMultipleUpload(Request $request, string $fieldName, string $directory): array
     {
-        $urls = [];
+        $paths = [];
         
         if ($request->hasFile($fieldName)) {
             $files = $request->file($fieldName);
-            
-            if (is_array($files)) {
-                $filesToProcess = array_slice($files, 0, 4);
+            $fileArray = is_array($files) ? $files : [$files];
+            $filesToProcess = array_slice($fileArray, 0, 4);
 
-                foreach ($filesToProcess as $file) {
-                    if ($file->isValid()) {
-                        $path = $file->store($directory, 'public');
-                        $urls[] = Storage::url($path);
-                    }
-                }
-            } else {
-                if ($files->isValid()) {
-                    $path = $files->store($directory, 'public');
-                    $urls[] = Storage::url($path);
+            foreach ($filesToProcess as $file) {
+                if ($file instanceof \Illuminate\Http\UploadedFile && $file->isValid()) {
+                    $path = $file->store($directory, 'public');
+                    $paths[] = $path;
                 }
             }
         }
 
-        return $urls;
+        return $paths;
     }
 
 
