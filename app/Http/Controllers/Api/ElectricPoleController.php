@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Services\FileUploadService;
 use App\Services\WilayahService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -176,7 +177,7 @@ class ElectricPoleController extends Controller
             if (is_array($inputPhotos)) {
                 foreach ($inputPhotos as $item) {
                     if (is_string($item) && !empty($item)) {
-                        $path = str_replace(asset('storage/'), '', $item);
+                        $path = Str::after($item, 'storage/');
                         $finalPaths[] = $path;
                     }
                 }
@@ -187,9 +188,9 @@ class ElectricPoleController extends Controller
                 $finalPaths = array_merge($finalPaths, $newUploadedPaths);
             }
 
-            $oldPathsInDb = $pole->foto_urls ?? [];
+            $oldPathsInDb = json_decode($pole->getRawOriginal('foto_urls'), true) ?? [];
             $deletedPaths = array_diff($oldPathsInDb, $finalPaths);
-            
+
             foreach ($deletedPaths as $pathToDelete) {
                 if (Storage::disk('public')->exists($pathToDelete)) {
                     Storage::disk('public')->delete($pathToDelete);
@@ -198,15 +199,16 @@ class ElectricPoleController extends Controller
 
             $data = $request->except('foto');
             $data['foto_urls'] = $finalPaths;
-
             $data = $this->generateKode($data);
-            
+
             $pole->update($data);
 
-            return $this->successResponse($pole, 'Data tiang listrik berhasil diperbarui');
-
+            return response()->json([
+                'message' => 'Data tiang listrik berhasil diperbarui',
+                'data' => $pole
+            ]);
         } catch (\Exception $e) {
-            return $this->errorResponse('Terjadi kesalahan: ' . $e->getMessage(), 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
