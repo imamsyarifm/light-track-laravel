@@ -7,6 +7,7 @@ use App\Models\ElectricPole;
 use App\Http\Controllers\Controller;
 use App\Services\FileUploadService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -26,7 +27,7 @@ class CctvController extends Controller
             'nomor'            => ['required', 'string', 'max:255'],
             'koordinat'        => ['nullable', 'string', 'max:255'],
             'foto'             => ['nullable', 'array', 'max:4'],
-            'foto.*'           => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'foto.*'           => ['nullable'],
         ];
 
         if ($method === 'store') {
@@ -93,22 +94,50 @@ class CctvController extends Controller
             return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
         }
 
-        $poleId = $request->has('electric_pole_id') ? $request->electric_pole_id : $cctv->electric_pole_id;
-        $pole = ElectricPole::findOrFail($poleId);
+        try {
+            $finalPaths = [];
+            $inputPhotos = $request->input('foto', []);
 
-        $data = $request->except('foto');
-        $data['kode'] = $pole->kode . '-' . $data['nomor'];
-        $data['foto_urls'] = $this->fileUploadService->updateMultipleUpload(
-            $request, 
-            $cctv, 
-            'foto', 
-            'foto_urls',
-            'cctvs' 
-        );
-        
-        $cctv->update($data);
+            if (is_array($inputPhotos)) {
+                foreach ($inputPhotos as $item) {
+                    if (is_string($item) && !empty($item)) {
+                        $path = Str::after($item, 'storage/');
+                        $finalPaths[] = $path;
+                    }
+                }
+            }
 
-        return response()->json(['message' => 'Data CCTV berhasil diperbarui', 'data' => $cctv]);
+            if ($request->hasFile('foto')) {
+                $newUploadedPaths = $this->fileUploadService->handleMultipleUpload($request, 'foto', 'cctvs');
+                $finalPaths = array_merge($finalPaths, $newUploadedPaths);
+            }
+
+            $oldPathsInDb = json_decode($cctv->getRawOriginal('foto_urls'), true) ?? [];
+            $deletedPaths = array_diff($oldPathsInDb, $finalPaths);
+
+            foreach ($deletedPaths as $pathToDelete) {
+                if (Storage::disk('public')->exists($pathToDelete)) {
+                    Storage::disk('public')->delete($pathToDelete);
+                }
+            }
+
+            $poleId = $request->has('electric_pole_id') ? $request->electric_pole_id : $cctv->electric_pole_id;
+            $pole = ElectricPole::findOrFail($poleId);
+
+            $data = $request->except('foto');
+            $data['foto_urls'] = $finalPaths;
+            $data['kode'] = $pole->kode . '-' . ($data['nomor'] ?? 
+            
+            $cctv->nomor);
+            $cctv->update($data);
+
+            return response()->json([
+                'message' => 'Data CCTV berhasil diperbarui',
+                'data' => $cctv
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
     }
 
     public function destroy(string $id)
