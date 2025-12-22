@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Services\FileUploadService;
 use App\Services\WilayahService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
 class ElectricPoleController extends Controller
@@ -136,15 +137,41 @@ class ElectricPoleController extends Controller
             return back()->withInput()->with('error', $e->getMessage());
         }
 
-        $data['foto_urls'] = $this->fileUploadService->updateMultipleUpload(
-            $request, 
-            $pole, 
-            'foto', 
-            'foto_urls',
-            'electric_poles' 
-        );
+        try {
+            $finalPaths = [];
+            $inputPhotos = $request->input('foto', []);
 
-        $pole->update($data);
+            if (is_array($inputPhotos)) {
+                foreach ($inputPhotos as $item) {
+                    if (is_string($item) && !empty($item)) {
+                        $path = Str::after($item, 'storage/');
+                        $finalPaths[] = $path;
+                    }
+                }
+            }
+
+            if ($request->hasFile('foto')) {
+                $newUploadedPaths = $this->fileUploadService->handleMultipleUpload($request, 'foto', 'electric_poles');
+                $finalPaths = array_merge($finalPaths, $newUploadedPaths);
+            }
+
+            $oldPathsInDb = json_decode($pole->getRawOriginal('foto_urls'), true) ?? [];
+            $deletedPaths = array_diff($oldPathsInDb, $finalPaths);
+
+            foreach ($deletedPaths as $pathToDelete) {
+                if (Storage::disk('public')->exists($pathToDelete)) {
+                    Storage::disk('public')->delete($pathToDelete);
+                }
+            }
+
+            $data = $request->except('foto');
+            $data['foto_urls'] = $finalPaths;
+            $data = $this->generateKode($data);
+
+            $pole->update($data);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()]);
+        }
 
         return redirect()->route('admin.poles.index')->with('success', "Tiang Listrik '{$pole->kode}' berhasil diperbarui.");
     }

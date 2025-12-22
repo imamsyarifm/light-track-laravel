@@ -7,6 +7,7 @@ use App\Models\ElectricPole;
 use App\Http\Controllers\Controller;
 use App\Services\FileUploadService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
 class IotController extends Controller
@@ -104,18 +105,46 @@ class IotController extends Controller
         $poleId = $request->has('electric_pole_id') ? $request->electric_pole_id : $iot->electric_pole_id;
         $pole = ElectricPole::findOrFail($poleId);
 
-        $data = $request->except('foto');
-        $data['kode'] = $pole->kode . '-' . $data['nomor'];
+        try {
+            $finalPaths = [];
+            $inputPhotos = $request->input('foto', []);
 
-        $data['foto_urls'] = $this->fileUploadService->updateMultipleUpload(
-            $request, 
-            $iot, 
-            'foto', 
-            'foto_urls',
-            'iots'
-        );
+            if (is_array($inputPhotos)) {
+                foreach ($inputPhotos as $item) {
+                    if (is_string($item) && !empty($item)) {
+                        $path = Str::after($item, 'storage/');
+                        $finalPaths[] = $path;
+                    }
+                }
+            }
 
-        $iot->update($data);
+            if ($request->hasFile('foto')) {
+                $newUploadedPaths = $this->fileUploadService->handleMultipleUpload($request, 'foto', 'iots');
+                $finalPaths = array_merge($finalPaths, $newUploadedPaths);
+            }
+
+            $oldPathsInDb = json_decode($iot->getRawOriginal('foto_urls'), true) ?? [];
+            $deletedPaths = array_diff($oldPathsInDb, $finalPaths);
+
+            foreach ($deletedPaths as $pathToDelete) {
+                if (Storage::disk('public')->exists($pathToDelete)) {
+                    Storage::disk('public')->delete($pathToDelete);
+                }
+            }
+
+            $poleId = $request->has('electric_pole_id') ? $request->electric_pole_id : $iot->electric_pole_id;
+            $pole = ElectricPole::findOrFail($poleId);
+
+            $data = $request->except('foto');
+            $data['foto_urls'] = $finalPaths;
+            $data['kode'] = $pole->kode . '-' . ($data['nomor'] ?? 
+            
+            $iot->nomor);
+            $iot->update($data);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
         return redirect()->route('admin.iots.index')->with('success', "IoT '{$iot->kode}' berhasil diperbarui.");
     }
 

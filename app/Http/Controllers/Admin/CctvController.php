@@ -7,6 +7,7 @@ use App\Models\ElectricPole;
 use App\Http\Controllers\Controller;
 use App\Services\FileUploadService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
 class CctvController extends Controller
@@ -104,18 +105,46 @@ class CctvController extends Controller
         $poleId = $request->has('electric_pole_id') ? $request->electric_pole_id : $cctv->electric_pole_id;
         $pole = ElectricPole::findOrFail($poleId);
 
-        $data = $request->except('foto');
-        $data['kode'] = $pole->kode . '-' . $data['nomor'];
+        try {
+            $finalPaths = [];
+            $inputPhotos = $request->input('foto', []);
 
-        $data['foto_urls'] = $this->fileUploadService->updateMultipleUpload(
-            $request, 
-            $cctv, 
-            'foto', 
-            'foto_urls',
-            'cctvs'
-        );
+            if (is_array($inputPhotos)) {
+                foreach ($inputPhotos as $item) {
+                    if (is_string($item) && !empty($item)) {
+                        $path = Str::after($item, 'storage/');
+                        $finalPaths[] = $path;
+                    }
+                }
+            }
 
-        $cctv->update($data);
+            if ($request->hasFile('foto')) {
+                $newUploadedPaths = $this->fileUploadService->handleMultipleUpload($request, 'foto', 'cctvs');
+                $finalPaths = array_merge($finalPaths, $newUploadedPaths);
+            }
+
+            $oldPathsInDb = json_decode($cctv->getRawOriginal('foto_urls'), true) ?? [];
+            $deletedPaths = array_diff($oldPathsInDb, $finalPaths);
+
+            foreach ($deletedPaths as $pathToDelete) {
+                if (Storage::disk('public')->exists($pathToDelete)) {
+                    Storage::disk('public')->delete($pathToDelete);
+                }
+            }
+
+            $poleId = $request->has('electric_pole_id') ? $request->electric_pole_id : $cctv->electric_pole_id;
+            $pole = ElectricPole::findOrFail($poleId);
+
+            $data = $request->except('foto');
+            $data['foto_urls'] = $finalPaths;
+            $data['kode'] = $pole->kode . '-' . ($data['nomor'] ?? 
+            
+            $cctv->nomor);
+            $cctv->update($data);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
         return redirect()->route('admin.cctvs.index')->with('success', "CCTV '{$cctv->kode}' berhasil diperbarui.");
     }
 

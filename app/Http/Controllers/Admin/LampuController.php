@@ -7,6 +7,7 @@ use App\Models\ElectricPole;
 use App\Http\Controllers\Controller;
 use App\Services\FileUploadService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
 class LampuController extends Controller
@@ -105,18 +106,46 @@ class LampuController extends Controller
         $poleId = $request->has('electric_pole_id') ? $request->electric_pole_id : $lampu->electric_pole_id;
         $pole = ElectricPole::findOrFail($poleId);
 
-        $data = $request->except('foto');
-        $data['kode'] = $pole->kode . '-' . $data['nomor'];
+        try {
+            $finalPaths = [];
+            $inputPhotos = $request->input('foto', []);
 
-        $data['foto_urls'] = $this->fileUploadService->updateMultipleUpload(
-            $request, 
-            $lampu, 
-            'foto', 
-            'foto_urls',
-            'lampus'
-        );
+            if (is_array($inputPhotos)) {
+                foreach ($inputPhotos as $item) {
+                    if (is_string($item) && !empty($item)) {
+                        $path = Str::after($item, 'storage/');
+                        $finalPaths[] = $path;
+                    }
+                }
+            }
 
-        $lampu->update($data);
+            if ($request->hasFile('foto')) {
+                $newUploadedPaths = $this->fileUploadService->handleMultipleUpload($request, 'foto', 'lampus');
+                $finalPaths = array_merge($finalPaths, $newUploadedPaths);
+            }
+
+            $oldPathsInDb = json_decode($lampu->getRawOriginal('foto_urls'), true) ?? [];
+            $deletedPaths = array_diff($oldPathsInDb, $finalPaths);
+
+            foreach ($deletedPaths as $pathToDelete) {
+                if (Storage::disk('public')->exists($pathToDelete)) {
+                    Storage::disk('public')->delete($pathToDelete);
+                }
+            }
+
+            $poleId = $request->has('electric_pole_id') ? $request->electric_pole_id : $lampu->electric_pole_id;
+            $pole = ElectricPole::findOrFail($poleId);
+
+            $data = $request->except('foto');
+            $data['foto_urls'] = $finalPaths;
+            $data['kode'] = $pole->kode . '-' . ($data['nomor'] ?? 
+            
+            $lampu->nomor);
+            $lampu->update($data);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()]);
+        }
+        
         return redirect()->route('admin.lampus.index')->with('success', "Lampu '{$lampu->kode}' berhasil diperbarui.");
     }
 
