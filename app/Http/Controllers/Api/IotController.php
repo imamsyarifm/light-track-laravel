@@ -30,13 +30,14 @@ class IotController extends Controller
             'foto.*'           => ['nullable'],
         ];
 
-        if ($method === 'store') {
-            $rules['nomor'][] = 'unique:iots,nomor';
-        }
+        // Notes: temporary not using unique rules
+        // if ($method === 'store') {
+        //     $rules['nomor'][] = 'unique:iots,nomor';
+        // }
 
-        if ($method === 'update' && $iot) {
-            $rules['nomor'][] = 'unique:iots,nomor,' . $iot->id;
-        }
+        // if ($method === 'update' && $iot) {
+        //     $rules['nomor'][] = 'unique:iots,nomor,' . $iot->id;
+        // }
 
         return $rules;
     }

@@ -44,7 +44,9 @@ class ElectricPoleController extends Controller
             $uniqueRule->ignore($pole->id);
         }
 
-        $rules['nomor'] = ['required', 'string', 'max:255', $uniqueRule];
+        // Notes: temporary not using unique rules
+        // $rules['nomor'] = ['required', 'string', 'max:255', $uniqueRule];
+        $rules['nomor'] = ['required', 'string', 'max:255'];
 
         return $rules;
     }
@@ -73,9 +75,13 @@ class ElectricPoleController extends Controller
      */
     public function index(Request $request)
     {
-        $keyword    = $request->keyword;
-        $sortBy     = $request->sort_by ?? 'created_at';
-        $sortOrder  = $request->sort_order ?? 'desc';
+        $keyword        = $request->keyword;
+        $sortBy         = $request->sort_by ?? 'created_at';
+        $sortOrder      = $request->sort_order ?? 'desc';
+        $provinsi       = $request->provinsi;
+        $kotaKabupaten  = $request->kota_kabupaten;
+        $kecamatan      = $request->kecamatan;
+        $kelurahanDesa  = $request->kelurahan_desa;
 
         $query = ElectricPole::query();
 
@@ -84,6 +90,22 @@ class ElectricPoleController extends Controller
                 $q->where('nomor', 'like', '%' . $keyword . '%')
                 ->orWhere('kode', 'like', '%' . $keyword . '%');
             });
+        }
+
+        if ($provinsi) {
+            $query->where('provinsi', 'like', '%' . $provinsi . '%');
+        }
+
+        if ($kotaKabupaten) {
+            $query->where('kota_kabupaten', 'like', '%' . $kotaKabupaten . '%');
+        }
+
+        if ($kecamatan) {
+            $query->where('kecamatan', 'like', '%' . $kecamatan . '%');
+        }
+
+        if ($kelurahanDesa) {
+            $query->where('kelurahan_desa', 'like', '%' . $kelurahanDesa . '%');
         }
 
         if (in_array($sortOrder, ['asc', 'desc'])) {

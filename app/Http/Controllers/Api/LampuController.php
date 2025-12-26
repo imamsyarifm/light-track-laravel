@@ -30,13 +30,14 @@ class LampuController extends Controller
             'foto.*'           => ['nullable'],
         ];
 
-        if ($method === 'store') {
-            $rules['nomor'][] = 'unique:lampus,nomor';
-        }
+        // Notes: temporary not using unique rules
+        // if ($method === 'store') {
+        //     $rules['nomor'][] = 'unique:lampus,nomor';
+        // }
 
-        if ($method === 'update' && $lampu) {
-            $rules['nomor'][] = 'unique:lampus,nomor,' . $lampu->id;
-        }
+        // if ($method === 'update' && $lampu) {
+        //     $rules['nomor'][] = 'unique:lampus,nomor,' . $lampu->id;
+        // }
 
         return $rules;
     }
