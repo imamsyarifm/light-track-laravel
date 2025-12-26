@@ -44,7 +44,9 @@ class ElectricPoleController extends Controller
             $uniqueRule->ignore($pole->id);
         }
 
-        $rules['nomor'] = ['required', 'string', 'max:255', $uniqueRule];
+        // Notes: temporary not using unique rules
+        // $rules['nomor'] = ['required', 'string', 'max:255', $uniqueRule];
+        $rules['nomor'] = ['required', 'string', 'max:255'];
 
         return $rules;
     }

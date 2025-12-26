@@ -35,13 +35,14 @@ class ElectricPoleController extends Controller
             'foto.*'         => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ];
 
-        if ($method === 'store') {
-            $rules['nomor'][] = 'unique:electric_poles,nomor';
-        }
+        // Notes: temporary not using unique rules
+        // if ($method === 'store') {
+        //     $rules['nomor'][] = 'unique:electric_poles,nomor';
+        // }
 
-        if ($method === 'update' && $pole) {
-            $rules['nomor'][] = 'unique:electric_poles,nomor,' . $pole->id;
-        }
+        // if ($method === 'update' && $pole) {
+        //     $rules['nomor'][] = 'unique:electric_poles,nomor,' . $pole->id;
+        // }
 
         return $rules;
     }

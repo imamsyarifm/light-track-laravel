@@ -30,13 +30,14 @@ class CctvController extends Controller
             'foto.*'           => ['nullable'],
         ];
 
-        if ($method === 'store') {
-            $rules['nomor'][] = 'unique:cctvs,nomor';
-        }
+        // Notes: temporary not using unique rules
+        // if ($method === 'store') {
+        //     $rules['nomor'][] = 'unique:cctvs,nomor';
+        // }
 
-        if ($method === 'update' && $cctv) {
-            $rules['nomor'][] = 'unique:cctvs,nomor,' . $cctv->id;
-        }
+        // if ($method === 'update' && $cctv) {
+        //     $rules['nomor'][] = 'unique:cctvs,nomor,' . $cctv->id;
+        // }
 
         return $rules;
     }
