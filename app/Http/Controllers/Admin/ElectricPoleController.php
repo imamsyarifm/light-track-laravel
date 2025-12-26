@@ -68,17 +68,38 @@ class ElectricPoleController extends Controller
 
     public function index()
     {
-        $search = request('search');
-        
-        $poles = ElectricPole::latest()
-                ->when($search, function ($query, $search) {
-                    $query->where(function ($q) use ($search) {
-                        $q->where('nomor', 'like', "%{$search}%")
-                        ->orWhere('provinsi', 'like', "%{$search}%")
-                        ->orWhere('kota_kabupaten', 'like', "%{$search}%");
-                    });
-                })
-                ->paginate(15);
+        $search         = request('search');
+        $provinsi       = request('provinsi');
+        $kotaKabupaten  = request('kota_kabupaten');
+        $kecamatan      = request('kecamatan');
+        $kelurahanDesa  = request('kelurahan_desa');
+
+        $poles = ElectricPole::query()
+            ->latest()
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nomor', 'like', "%{$search}%")
+                    ->orWhere('kode', 'like', "%{$search}%")
+                    ->orWhere('provinsi', 'like', "%{$search}%")
+                    ->orWhere('kota_kabupaten', 'like', "%{$search}%")
+                    ->orWhere('kecamatan', 'like', "%{$search}%")
+                    ->orWhere('kelurahan_desa', 'like', "%{$search}%");
+                });
+            })
+            ->when($provinsi, function ($query, $provinsi) {
+                $query->where('provinsi', 'like', "%{$provinsi}%");
+            })
+            ->when($kotaKabupaten, function ($query, $kotaKabupaten) {
+                $query->where('kota_kabupaten', 'like', "%{$kotaKabupaten}%");
+            })
+            ->when($kecamatan, function ($query, $kecamatan) {
+                $query->where('kecamatan', 'like', "%{$kecamatan}%");
+            })
+            ->when($kelurahanDesa, function ($query, $kelurahanDesa) {
+                $query->where('kelurahan_desa', 'like', "%{$kelurahanDesa}%");
+            })
+            ->paginate(15)
+            ->withQueryString();
 
         return view('admin.poles.index', compact('poles'));
     }
